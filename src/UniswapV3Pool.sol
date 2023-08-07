@@ -6,9 +6,29 @@
 // Finally, we need to track the current price and the related tick. We’ll store them in one storage slot to optimize gas consumption: these variables will be often read and written together, so it makes sense to benefit from the state variables packing feature of Solidity.
 
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
+import "./lib/Position.sol";
+import "./lib/Tick.sol";
+
 pragma solidity ^0.8.17;
 
 contract UniswapV3Pool {
+    error InvalidTickRange();
+    error ZeroLiquidity();
+    error InsufficientInputAmount();
+
+    event Mint(
+        address sender,
+        address indexed owner,
+        int24 indexed tickLower,
+        int24 indexed tickUpper,
+        uint128 amount,
+        uint256 amount0,
+        uint256 amount1
+    );
+
+    using Tick for mapping(int24 => Tick.Info);
+    using Positon for mapping(bytes32 => Position.Info);
+
     int24 internal constant MIN_TICK = -887272;
     int24 internal constant MAX_TICK = 887272;
 
@@ -26,4 +46,76 @@ contract UniswapV3Pool {
 
     mapping(int24 => Tick.Info) public ticks;
     mapping(bytes32 => Position.Info) public positions;
+
+    constructor(
+        address _token0,
+        address _token1,
+        uint160 _sqrtPriceX96,
+        int24 _tick
+    ) {
+        token0 = _token0;
+        token1 = _token1;
+        slot0 = Slot0({sqrtPriceX96: _sqrtPriceX96, tick: _tick});
+    }
+
+    function mint(
+        address owner,
+        int24 lowerTick,
+        uint24 upperTick,
+        uint128 amount
+    ) external returns (uint amount0, uint amount1) {
+        if (
+            lowerTick < MIN_TICK ||
+            upperTick > MAX_TICK ||
+            lowerTick > upperTick
+        ) revert InvalidTickRange();
+
+        if (amount == 0) revert ZeroLiquidity();
+
+        ticks.update(lowerTick, amount);
+        ticks.update(upperTick, amount);
+
+        Position.Info storage position = positions.get(
+            owner,
+            lowerTick,
+            upperTick
+        );
+
+        position.update(amount);
+
+        liquidity += amount;
+
+        //hardcode amount0,amount1
+
+        uint balance0Before;
+        uint balance1Before;
+
+        if (amount0 > 0) balance0Before = balance0();
+        if (amount1 > 0) balance1Before = balance1();
+
+        IUniswapV3Callback(msg.sender).uniswapV3MintCallback(amount0, amount1);
+
+        if (amount0 > 0 && balance0Before + amount0 > balance0())
+            revert InsufficientInputAmount();
+        if (amount1 > 0 && balance1Before + amount0 > balance1())
+            revert InsufficientInputAmount();
+
+        emit Mint(
+            msg.sender,
+            owner,
+            lowerTick,
+            upperTick,
+            amount,
+            amount0,
+            amount1
+        );
+    }
+
+    function balance0() internal returns (uint balance) {
+        return IERC20(token0).balanceOf(address(this));
+    }
+
+    function balance1() internal returns (uint balance) {
+        return IERC20(token1).balanceOf(address(this));
+    }
 }
