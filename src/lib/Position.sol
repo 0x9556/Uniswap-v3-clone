@@ -20,7 +20,7 @@ library Position {
         address owner,
         int24 lowerTick,
         int24 upperTick
-    ) internal view returns (Position.Info storage position) {
+    ) internal view returns (Position.Info storage) {
         return self[keccak256(abi.encodePacked(owner, lowerTick, upperTick))];
     }
 }

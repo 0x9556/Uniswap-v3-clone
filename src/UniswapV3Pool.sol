@@ -6,6 +6,8 @@
 // Finally, we need to track the current price and the related tick. We’ll store them in one storage slot to optimize gas consumption: these variables will be often read and written together, so it makes sense to benefit from the state variables packing feature of Solidity.
 
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
+import "./interfaces/IERC20.sol";
+import "./interfaces/IUniswapV3MintCallback.sol";
 import "./lib/Position.sol";
 import "./lib/Tick.sol";
 
@@ -27,7 +29,8 @@ contract UniswapV3Pool {
     );
 
     using Tick for mapping(int24 => Tick.Info);
-    using Positon for mapping(bytes32 => Position.Info);
+    using Position for mapping(bytes32 => Position.Info);
+    using Position for Position.Info;
 
     int24 internal constant MIN_TICK = -887272;
     int24 internal constant MAX_TICK = 887272;
@@ -61,7 +64,7 @@ contract UniswapV3Pool {
     function mint(
         address owner,
         int24 lowerTick,
-        uint24 upperTick,
+        int24 upperTick,
         uint128 amount
     ) external returns (uint amount0, uint amount1) {
         if (
@@ -75,13 +78,13 @@ contract UniswapV3Pool {
         ticks.update(lowerTick, amount);
         ticks.update(upperTick, amount);
 
-        Position.Info storage position = positions.get(
+        Position.Info storage positionInfo = positions.get(
             owner,
             lowerTick,
             upperTick
         );
 
-        position.update(amount);
+        positionInfo.update(amount);
 
         liquidity += amount;
 
@@ -93,7 +96,10 @@ contract UniswapV3Pool {
         if (amount0 > 0) balance0Before = balance0();
         if (amount1 > 0) balance1Before = balance1();
 
-        IUniswapV3Callback(msg.sender).uniswapV3MintCallback(amount0, amount1);
+        IUniswapV3MintCallback(msg.sender).uniswapV3MintCallback(
+            amount0,
+            amount1
+        );
 
         if (amount0 > 0 && balance0Before + amount0 > balance0())
             revert InsufficientInputAmount();
