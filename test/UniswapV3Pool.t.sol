@@ -43,7 +43,7 @@ contract UniswapV3PoolTest is Test {
         });
 
         (uint poolBalance0, uint poolBalance1) = setupTestCase(params);
-
+        //test deposite amount
         uint256 expectedAmount0 = 0.998976618347425280 ether;
         uint256 expectedAmount1 = 5000 ether;
         assertEq(
@@ -56,17 +56,16 @@ contract UniswapV3PoolTest is Test {
             expectedAmount1,
             "incorrect token1 deposited amount"
         );
-
         assertEq(token0.balanceOf(address(pool)), expectedAmount0);
         assertEq(token1.balanceOf(address(pool)), expectedAmount1);
-
+        //test position
         bytes32 positionKey = keccak256(
             abi.encodePacked(address(this), params.lowerTick, params.upperTick)
         );
 
         uint128 posLiquidity = pool.positions(positionKey);
         assertEq(posLiquidity, params.liquidity);
-
+        //test tick
         (bool tickInitialized, uint128 tickLiquidity) = pool.ticks(
             params.lowerTick
         );
@@ -76,7 +75,7 @@ contract UniswapV3PoolTest is Test {
         (tickInitialized, tickLiquidity) = pool.ticks(params.upperTick);
         assertTrue(tickInitialized);
         assertEq(tickLiquidity, params.liquidity);
-
+        //test current sqrt price
         (uint160 sqrtPriceX96, int24 tick) = pool.slot0();
         assertEq(
             sqrtPriceX96,

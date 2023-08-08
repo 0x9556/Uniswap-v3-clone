@@ -4,7 +4,7 @@ MIN_TICK = -887272
 MAX_TICK = 887272
 
 Q96 = 2**96
-ETH_DECIMAL = 10**18
+DECIMAL = 10**18
 
 
 def price_to_tick(p):
@@ -16,11 +16,11 @@ def price_to_sqrtp(p):
 
 
 def sqrtp_to_price(sqrtp):
-    return (sqrtp / Q96)**2
+    return (sqrtp / Q96) ** 2
 
 
 def tick_to_sqrtp(t):
-    return int((1.0001**(t / 2)) * Q96)
+    return int((1.0001 ** (t / 2)) * Q96)
 
 
 def liquidity0(amount, pa, pb):
@@ -54,53 +54,39 @@ price_upp = 5500
 
 print(f"Price range: {price_low}-{price_upp}; current price: {price_cur}")
 
+lower_tick = price_to_tick(price_low)
+current_tick = price_to_tick(price_cur)
+upper_tick = price_to_tick(price_upp)
+
+print(f"Tick range: {lower_tick}-{upper_tick}; current tick: {current_tick}")
+
 sqrtp_low = price_to_sqrtp(price_low)
 sqrtp_cur = price_to_sqrtp(price_cur)
 sqrtp_upp = price_to_sqrtp(price_upp)
 
-amount_eth = 1 * ETH_DECIMAL
-amount_usdc = 5000 * ETH_DECIMAL
+print(f"Current sqrt price: {sqrtp_cur}")
+
+amount_eth = 1 * DECIMAL
+amount_usdc = 5000 * DECIMAL
 
 liq0 = liquidity0(amount_eth, sqrtp_cur, sqrtp_upp)
 liq1 = liquidity1(amount_usdc, sqrtp_cur, sqrtp_low)
 liq = int(min(liq0, liq1))
 
 print(
-    f"Deposit: {amount_eth/ETH_DECIMAL} ETH, {amount_usdc/ETH_DECIMAL} USDC; liquidity: {liq}"
+    f"Deposit: {amount_eth/DECIMAL} ETH, {amount_usdc/DECIMAL} USDC; liquidity: {liq}"
 )
-
+print("~" * 64)
 # Swap USDC for ETH
-amount_in = 42 * ETH_DECIMAL
+amount_in = 42 * DECIMAL
+price_delta = (amount_in * Q96) // liq
+price_after = sqrtp_cur + price_delta
+print("New price: ", (price_after / Q96) ** 2)
+print("New sqrt Price: ", price_after)
+print("New tick: ", price_to_tick((price_after / Q96) ** 2))
 
-print(f"\nSelling {amount_in/ETH_DECIMAL} USDC")
+amount_in = calc_amount1(liq, price_after, sqrtp_cur)
+amount_out = calc_amount0(liq, price_after, sqrtp_cur)
 
-price_diff = (amount_in * Q96) // liq
-price_next = sqrtp_cur + price_diff
-
-print("New price:", (price_next / Q96)**2)
-print("New sqrtP:", price_next)
-print("New tick:", price_to_tick((price_next / Q96)**2))
-
-amount_in = calc_amount1(liq, price_next, sqrtp_cur)
-amount_out = calc_amount0(liq, price_next, sqrtp_cur)
-
-print("USDC in:", amount_in / ETH_DECIMAL)
-print("ETH out:", amount_out / ETH_DECIMAL)
-
-# Swap ETH for USDC
-amount_in = 0.01337 * ETH_DECIMAL
-
-print(f"\nSelling {amount_in/ETH_DECIMAL} ETH")
-
-price_next = int(
-    (liq * Q96 * sqrtp_cur) // (liq * Q96 + amount_in * sqrtp_cur))
-
-print("New price:", (price_next / Q96)**2)
-print("New sqrtP:", price_next)
-print("New tick:", price_to_tick((price_next / Q96)**2))
-
-amount_in = calc_amount0(liq, price_next, sqrtp_cur)
-amount_out = calc_amount1(liq, price_next, sqrtp_cur)
-
-print("ETH in:", amount_in / ETH_DECIMAL)
-print("USDC out:", amount_out / ETH_DECIMAL)
+print("USDC in: ", amount_in / DECIMAL)
+print("ETH out: ", amount_out / DECIMAL)
