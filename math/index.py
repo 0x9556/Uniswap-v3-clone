@@ -11,6 +11,10 @@ def price_to_tick(p):
     return math.floor(math.log(p, 1.0001))
 
 
+def tick_to_price(tick):
+    return math.pow(1.0001, tick)
+
+
 def price_to_sqrtp(p):
     return int(math.sqrt(p) * Q96)
 
@@ -19,20 +23,22 @@ def sqrtp_to_price(sqrtp):
     return (sqrtp / Q96) ** 2
 
 
-def tick_to_sqrtp(t):
-    return int((1.0001 ** (t / 2)) * Q96)
+def tick_to_sqrtp(tick):
+    return int(price_to_sqrtp(tick_to_price(tick)))
 
 
-def liquidity0(amount, pa, pb):
-    if pa > pb:
-        pa, pb = pb, pa
-    return (amount * (pa * pb) / Q96) / (pb - pa)
+# delta y
+def liquidity0(amount, sqrtpa, sqrtpb):
+    if sqrtpa > sqrtpb:
+        sqrtpa, sqrtpb = sqrtpb, sqrtpa
+    return (amount * (sqrtpa * sqrtpb) / Q96) / (sqrtpb - sqrtpa)
 
 
-def liquidity1(amount, pa, pb):
-    if pa > pb:
-        pa, pb = pb, pa
-    return amount * Q96 / (pb - pa)
+# delta x
+def liquidity1(amount, sqrtpa, sqrtpb):
+    if sqrtpa > sqrtpb:
+        sqrtpa, sqrtpb = sqrtpb, sqrtpa
+    return amount * Q96 / (sqrtpb - sqrtpa)
 
 
 def calc_amount0(liq, pa, pb):

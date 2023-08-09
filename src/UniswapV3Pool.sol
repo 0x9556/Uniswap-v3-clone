@@ -8,6 +8,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 import "./interfaces/IERC20.sol";
 import "./interfaces/IUniswapV3MintCallback.sol";
+import "./interfaces/IUniswapV3SwapCallback.sol";
 import "./lib/Position.sol";
 import "./lib/Tick.sol";
 
@@ -26,6 +27,16 @@ contract UniswapV3Pool {
         uint128 amount,
         uint256 amount0,
         uint256 amount1
+    );
+
+    event Swap(
+        address sender,
+        address indexed recipient,
+        uint indexed amount0,
+        uint indexed amount1,
+        uint160 sqrtPriceX96,
+        uint128 liquidity,
+        int24 tick
     );
 
     using Tick for mapping(int24 => Tick.Info);
@@ -119,6 +130,39 @@ contract UniswapV3Pool {
         );
     }
 
+    function swap(
+        address recipient
+    ) external returns (uint amount0, uint amount1) {
+        int24 nextTick = 85184;
+        uint160 nextPrice = 5604469350942327889444743441197;
+
+        amount0 = 0.008396714242162444 ether;
+        amount1 = 42 ether;
+
+        (slot0.tick, slot0.sqrtPriceX96) = (nextTick, nextPrice);
+
+        IERC20(token0).transfer(recipient, amount0);
+        uint balance1Before = balance1();
+        IUniswapV3SwapCallback(msg.sender).uniswapV3SwapCallback(
+            amount0,
+            amount1
+        );
+
+        if (balance1Before + amount1 < balance1())
+            revert InsufficientInputAmount();
+
+        emit Swap(
+            msg.sender,
+            recipient,
+            amount0,
+            amount1,
+            slot0.sqrtPriceX96,
+            liquidity,
+            slot0.tick
+        );
+    }
+
+    //internal
     function balance0() internal returns (uint balance) {
         return IERC20(token0).balanceOf(address(this));
     }

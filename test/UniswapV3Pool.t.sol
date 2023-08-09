@@ -90,6 +90,20 @@ contract UniswapV3PoolTest is Test {
         );
     }
 
+    function testSwapSuccess() external {
+        TestCaseParams memory params = TestCaseParams({
+            wethBalance: 1 ether,
+            usdcBalance: 5000 ether,
+            currentTick: 85176,
+            lowerTick: 84222,
+            upperTick: 86129,
+            liquidity: 1517882343751509868544,
+            currentSqrtP: 5602277097478614198912276234240,
+            shouldTransferInCallback: true,
+            mintLiqudity: true
+        });
+    }
+
     function uniswapV3MintCallback(uint amount0, uint amount1) public {
         if (!shouldTransferInCallback) {
             token0.transfer(msg.sender, amount0);
