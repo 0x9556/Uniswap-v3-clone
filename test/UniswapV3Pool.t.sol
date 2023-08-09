@@ -90,7 +90,7 @@ contract UniswapV3PoolTest is Test {
         );
     }
 
-    function testSwapSuccess() external {
+    function testSwapBuyETH() external {
         TestCaseParams memory params = TestCaseParams({
             wethBalance: 1 ether,
             usdcBalance: 5000 ether,
@@ -102,13 +102,44 @@ contract UniswapV3PoolTest is Test {
             shouldTransferInCallback: true,
             mintLiqudity: true
         });
+
+        (uint poolBalance0, uint poolBalance1) = setupTestCase(params);
+
+        token1.mint(address(this), 42 ether);
+
+        (int amount0Delta, int amount1Delta) = pool.swap(address(this));
+
+        assertEq(amount0Delta, -0.008396714242162444 ether, "invalid eth out");
+        assertEq(amount1Delta, 42 ether, "invalid usdc in");
+
+        assertEq(
+            token0.balanceOf(address(pool)),
+            uint(int(poolBalance0) + amount0Delta),
+            "Pool Balance0"
+        );
+        assertEq(
+            token1.balanceOf(address(pool)),
+            uint(int(poolBalance1) + amount1Delta),
+            "Pool Balance1"
+        );
+
+        assertEq(
+            token0.balanceOf(address(this)),
+            uint(amount0Delta),
+            "User balance0"
+        );
+
+        assertEq(token1.balanceOf(address(this)), 0, "User balance1");
     }
 
-    function uniswapV3MintCallback(uint amount0, uint amount1) public {
-        if (!shouldTransferInCallback) {
-            token0.transfer(msg.sender, amount0);
-            token1.transfer(msg.sender, amount1);
-        }
+    function uniswapV3MintCallback(uint amount0, uint amount1) external {
+        token0.transfer(msg.sender, amount0);
+        token1.transfer(msg.sender, amount1);
+    }
+
+    function uniswapV3SwapCallback(int amount0, int amount1) external {
+        if (amount0 > 0) token0.transfer(msg.sender, uint(amount0));
+        if (amount1 > 0) token1.transfer(msg.sender, uint(amount1));
     }
 
     //internal function
@@ -133,7 +164,5 @@ contract UniswapV3PoolTest is Test {
                 params.liquidity
             );
         }
-
-        // shouldTransferInCallback = params.shouldTransferInCallback;
     }
 }
