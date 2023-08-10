@@ -107,7 +107,9 @@ contract UniswapV3PoolTest is Test {
 
         token1.mint(address(this), 42 ether);
 
-        (int amount0Delta, int amount1Delta) = pool.swap(address(this));
+        uint balance0Before = IERC20(address(token0)).balanceOf(address(this));
+
+        (int amount0Delta, int amount1Delta) = pool.swap(address(this), "");
 
         assertEq(amount0Delta, -0.008396714242162444 ether, "invalid eth out");
         assertEq(amount1Delta, 42 ether, "invalid usdc in");
@@ -125,19 +127,27 @@ contract UniswapV3PoolTest is Test {
 
         assertEq(
             token0.balanceOf(address(this)),
-            uint(amount0Delta),
+            balance0Before + uint(-amount0Delta),
             "User balance0"
         );
 
         assertEq(token1.balanceOf(address(this)), 0, "User balance1");
     }
 
-    function uniswapV3MintCallback(uint amount0, uint amount1) external {
+    function uniswapV3MintCallback(
+        uint amount0,
+        uint amount1,
+        bytes calldata
+    ) external {
         token0.transfer(msg.sender, amount0);
         token1.transfer(msg.sender, amount1);
     }
 
-    function uniswapV3SwapCallback(int amount0, int amount1) external {
+    function uniswapV3SwapCallback(
+        int amount0,
+        int amount1,
+        bytes calldata
+    ) external {
         if (amount0 > 0) token0.transfer(msg.sender, uint(amount0));
         if (amount1 > 0) token1.transfer(msg.sender, uint(amount1));
     }
@@ -161,7 +171,8 @@ contract UniswapV3PoolTest is Test {
                 address(this),
                 params.lowerTick,
                 params.upperTick,
-                params.liquidity
+                params.liquidity,
+                ""
             );
         }
     }
