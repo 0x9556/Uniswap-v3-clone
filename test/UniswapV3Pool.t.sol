@@ -2,7 +2,7 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Test.sol";
-import "./ERC20Mintable.sol";
+import "../src/ERC20Mintable.sol";
 import "../src/UniswapV3Pool.sol";
 
 contract UniswapV3PoolTest is Test {
