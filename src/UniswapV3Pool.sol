@@ -180,4 +180,10 @@ contract UniswapV3Pool {
     function balance1() internal returns (uint balance) {
         return IERC20(token1).balanceOf(address(this));
     }
+
+    function calculateMintAmount(
+        int24 lowerTick,
+        int24 upperTick,
+        int24 currentTick
+    ) internal returns (uint amount0, uint amount1) {}
 }

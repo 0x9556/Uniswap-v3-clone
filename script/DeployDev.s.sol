@@ -2,8 +2,10 @@
 pragma solidity ^0.8.17;
 
 import "forge-std/Script.sol";
+
 import "../src/ERC20Mintable.sol";
 import "../src/UniswapV3Pool.sol";
+import "../src/UniswapV3Manager.sol";
 
 contract DeployDev is Script {
     function run() public {
@@ -14,8 +16,8 @@ contract DeployDev is Script {
 
         vm.startBroadcast();
 
-        ERC20Mintable token0 = new ERC20Mintable("USDC", "USDC", 18);
-        ERC20Mintable token1 = new ERC20Mintable("Ether", "ETH", 18);
+        ERC20Mintable token0 = new ERC20Mintable("Ether", "ETH", 18);
+        ERC20Mintable token1 = new ERC20Mintable("USDC", "USDC", 18);
 
         UniswapV3Pool pool = new UniswapV3Pool(
             address(token0),
@@ -23,6 +25,17 @@ contract DeployDev is Script {
             currentSqrtP,
             currentTick
         );
+
+        UniswapV3Manager manager = new UniswapV3Manager();
+
+        token0.mint(msg.sender, wethBalance);
+        token1.mint(msg.sender, usdcBalance);
+
+        console.log("WETH address", address(token0));
+        console.log("USDC address", address(token1));
+        console.log("Pool address", address(pool));
+        console.log("Manager address", address(manager));
+
         vm.stopBroadcast();
     }
 }
