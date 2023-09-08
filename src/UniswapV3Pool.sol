@@ -12,7 +12,7 @@ import "./interfaces/IUniswapV3SwapCallback.sol";
 import "./lib/Position.sol";
 import "./lib/Tick.sol";
 
-pragma solidity ^0.8.17;
+pragma solidity ^0.8.21;
 
 contract UniswapV3Pool {
     error InvalidTickRange();
