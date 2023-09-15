@@ -40,12 +40,6 @@ contract UniswapV3Pool {
     using Position for Position.Info;
     using TickBitmap for mapping(int16 => uint256);
 
-    int24 internal constant MIN_TICK = -887272;
-    int24 internal constant MAX_TICK = 887272;
-
-    address public immutable token0;
-    address public immutable token1;
-
     struct Slot0 {
         uint160 sqrtPriceX96;
         int24 tick;
@@ -56,6 +50,27 @@ contract UniswapV3Pool {
         address token1;
         address payer;
     }
+
+    struct SwapState {
+        uint256 amountSpecifiedRemaining;
+        uint256 amountCalculated;
+        uint160 sqrtPriceX96;
+        int24 tick;
+    }
+
+    struct StepState {
+        uint160 sqrtPriceStartX96;
+        int24 nextTick;
+        uint160 sqrtPriceNextX96;
+        uint256 amountIn;
+        uint256 amountOut;
+    }
+
+    int24 internal constant MIN_TICK = -887272;
+    int24 internal constant MAX_TICK = 887272;
+
+    address public immutable token0;
+    address public immutable token1;
 
     Slot0 public slot0;
 
@@ -122,13 +137,29 @@ contract UniswapV3Pool {
         external
         returns (int256 amount0, int256 amount1)
     {
-        int24 nextTick = 85184;
-        uint160 nextPrice = 5604469350942327889444743441197;
+        Slot0 memory _slot0 = slot0;
 
-        amount0 = -0.008396714242162444 ether;
-        amount1 = 42 ether;
+        SwapState memory state = SwapState({
+            amountSpecifiedRemaining: amountSpecified,
+            amountCalculated: 0,
+            sqrtPriceX96: _slot0.sqrtPriceX96,
+            tick: _slot0.tick
+        });
 
-        (slot0.tick, slot0.sqrtPriceX96) = (nextTick, nextPrice);
+        while (state.amountSpecifiedRemaining > 0) {
+            StepState memory step;
+
+            step.sqrtPriceStartX96 = state.sqrtPriceX96;
+            (step.nextTick,) = tickBitmap.nextInitializedTickWithinOneWord(state.tick, 1, zeroForOne);
+            step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.nextTick);
+        }
+        // int24 nextTick = 85184;
+        // uint160 nextPrice = 5604469350942327889444743441197;
+
+        // amount0 = -0.008396714242162444 ether;
+        // amount1 = 42 ether;
+
+        // (slot0.tick, slot0.sqrtPriceX96) = (nextTick, nextPrice);
 
         IERC20(token0).transfer(recipient, uint256(-amount0));
         uint256 balance1Before = balance1();
