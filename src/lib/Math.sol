@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: SEE LICENSE IN LICENSE
 pragma solidity ^0.8.21;
 
+import {mulDiv} from "prb-math/Common.sol";
 import "./FixedPoint96.sol";
 
 library Math {
@@ -36,7 +37,7 @@ library Math {
     }
 
     function mulDivRoundingUp(uint256 a, uint256 b, uint256 denominator) private pure returns (uint256 result) {
-        result = PRBMath.muldiv(a, b, denominator);
+        result = mulDiv(a, b, denominator);
         if (mulmod(a, b, denominator) > 0) {
             require(result < type(uint256).max);
             result++;
