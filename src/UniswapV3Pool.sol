@@ -155,7 +155,7 @@ contract UniswapV3Pool {
             step.sqrtPriceNextX96 = TickMath.getSqrtRatioAtTick(step.nextTick);
 
             (state.sqrtPriceX96, step.amountIn, step.amountOut,) = SwapMath.computeSwapStep(
-                state.sqrtPriceX96, step.sqrtPriceNextX96, liquidity, state.amountSpecifiedRemaining
+                state.sqrtPriceX96, step.sqrtPriceNextX96, liquidity, state.amountSpecifiedRemaining, 0
             );
 
             state.amountSpecifiedRemaining -= step.amountIn;

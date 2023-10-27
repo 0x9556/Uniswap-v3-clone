@@ -2,7 +2,7 @@
 pragma solidity ^0.8.21;
 
 library BitMath {
-    function mostSignificantBit(uint x) internal pure returns (uint8 r) {
+    function mostSignificantBit(uint256 x) internal pure returns (uint8 r) {
         require(x > 0);
         //32
         if (x >= 0x100000000000000000000000000000000) {
@@ -45,7 +45,7 @@ library BitMath {
         }
     }
 
-    function leastSignificantBit(uint x) internal pure returns (uint r) {
+    function leastSignificantBit(uint256 x) internal pure returns (uint256 r) {
         require(x > 0);
         r = 255;
         //32
